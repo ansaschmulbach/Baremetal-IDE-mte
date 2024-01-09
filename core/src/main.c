@@ -18,6 +18,13 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "mte.h"
+#include "mte_addti.h"
+#include "mte_add.h"
+#include "mte_basic_load_store.h"
+#include "mte_csrs.h"
+#include "mte_dbg.h"
+#include "mte_irt.h"
 
 /* USER CODE END Includes */
 
@@ -76,13 +83,6 @@ int main(int argc, char **argv) {
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
 
-  // set up GPIO registers
-  GPIO_InitTypeDef GPIO_init_config;
-  GPIO_init_config.mode = GPIO_MODE_OUTPUT;
-  GPIO_init_config.pull = GPIO_PULL_NONE;
-  GPIO_init_config.drive_strength = GPIO_DS_STRONG;
-  HAL_GPIO_init(GPIOA, &GPIO_init_config, GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3);
-
   // set up UART registers
   UART_InitTypeDef UART_init_config;
   UART_init_config.baudrate = 115200;
@@ -90,19 +90,30 @@ int main(int argc, char **argv) {
   UART_init_config.stopbits = UART_STOPBITS_2;
   HAL_UART_init(UART0, &UART_init_config);
 
+    // CLEAR_BITS(UART0->RXCTRL, UART_RXCTRL_RXEN_MSK);
+    // CLEAR_BITS(UART0->TXCTRL, UART_TXCTRL_TXEN_MSK);
+
+    // SET_BITS(UART0->RXCTRL, UART_RXCTRL_RXEN_MSK);
+    // SET_BITS(UART0->TXCTRL, UART_TXCTRL_TXEN_MSK);
+
+    // CLEAR_BITS(UART0->TXCTRL, UART_TXCTRL_NSTOP_MSK);
+    // CLEAR_BITS(UART0->TXCTRL, UART_STOPBITS_2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1) {
-    uint64_t mhartid = READ_CSR("mhartid");
-    printf("Hello world from hart %d: %d\n", mhartid, counter);
-    counter += 1;
-    /* USER CODE END WHILE */
-  }
-  /* USER CODE BEGIN 3 */
+  uint64_t mhartid = READ_CSR("mhartid");
 
-  /* USER CODE END 3 */
+
+  for (int counter = 0; counter < 100; counter++) {
+    printf("Hello world from hart %d\n", mhartid);
+  }
+
+  printf("\n\n\n", mhartid);
+ 
+  while (1) {
+  }
 }
 
 /*
@@ -111,7 +122,28 @@ int main(int argc, char **argv) {
  * Multi-threaded programs should provide their own implementation.
  */
 void __attribute__((weak, noreturn)) __main(void) {
-  while (1) {
-   asm volatile ("wfi");
+
+  if (READ_CSR("mhartid") == 1) {
+      printf("Hart 1 does not have MTE!");
+      while(1) {
+      }
   }
+
+  printf("Running MTE add test...\n");
+  run_mte_add();
+  printf("Running MTE addti test...\n");
+  run_mte_addti();
+  printf("Running MTE basic load store test...\n");
+  run_mte_basic_load_store();
+  printf("Running MTE CSR test...\n");
+  run_mte_csrs();
+  printf("Running MTE Debug test...\n");
+  run_mte_dbg();
+  printf("Running MTE IRT test...\n");
+  run_mte_irt();
+
+
+  while (1) {
+  }
+
 }
